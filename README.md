@@ -11,7 +11,7 @@ This repository contains the Infrastructure as Code (IaC) for the serverless bac
 The backend is built on a serverless, event-driven architecture using core AWS services. This design is highly scalable, resilient, and extremely cost-effective.
 
 
-`![Architecture Diagram](images/backend-architecture.png)`
+![Architecture Diagram](images/backend-architecture.png)
 
 ---
 
@@ -51,7 +51,7 @@ This infrastructure is managed entirely by Terraform.
     ```
 
 2.  **Create a variables file:**
-    Create a file named `terraform.tfvars` and add the required secret for IP hashing:
+    Create a file named `terraform.tfvars` and add a random long secret for IP hashing:
     ```
     IP_HASH_SECRET = "your-super-long-and-random-secret-string"
     ```
