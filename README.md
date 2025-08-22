@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains the Infrastructure as Code (IaC) for the serverless backend of my personal portfolio website. This backend powers a secure, unique-visitor counter. The entire infrastructure is defined declaratively using Terraform and is deployed automatically via a CI/CD pipeline.
+This repository contains the Infrastructure as Code (IaC) for the serverless backend of my personal portfolio website demo at. This backend powers a secure, unique-visitor counter. The entire infrastructure is defined declaratively using Terraform and is deployed automatically via a CI/CD pipeline.
 
 ---
 
@@ -46,7 +46,7 @@ This infrastructure is managed entirely by Terraform.
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/[YOUR-USERNAME]/portfolio-backend.git
+    git clone https://github.com/arkhiVd/portfolio-backend.git
     cd portfolio-backend
     ```
 
