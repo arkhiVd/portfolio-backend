@@ -6,3 +6,4 @@ crash.log
 counter.zip
 .venv/
 __pycache__/
+.DS_Store
