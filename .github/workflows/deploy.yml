@@ -38,7 +38,7 @@ jobs:
       - name: Terraform Init
         run: terraform init
         env:
-          TF_VAR_ip_hash_secret: ${{ secrets.IP_HASH_SECRET }}
+          TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }} 
 
       - name: Run tfsec Security Scan
         uses: aquasecurity/tfsec-action@v1.0.0        
@@ -46,7 +46,7 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -no-color -input=false
         env:
-          TF_VAR_ip_hash_secret: ${{ secrets.IP_HASH_SECRET }}
+          TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }} 
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -no-color -input=false

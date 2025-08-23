@@ -16,10 +16,10 @@ def lambda_handler(event, context):
     try:
         dynamodb = boto3.resource('dynamodb')
         table = dynamodb.Table(os.environ['table_name'])
-        IP_HASH_SECRET = os.environ['IP_HASH_SECRET']
+        ip_hash_secret = os.environ['ip_hash_secret']
         COUNTER_ID = 'portfolio_counter'
         ip_address = event['requestContext']['identity']['sourceIp']
-        visitor_id = pseudonymize_ip(ip_address, IP_HASH_SECRET)
+        visitor_id = pseudonymize_ip(ip_address, ip_hash_secret)
         
         response = table.get_item(Key={'ID': visitor_id})
 
