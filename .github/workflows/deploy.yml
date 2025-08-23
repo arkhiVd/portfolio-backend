@@ -1,0 +1,55 @@
+name: Deploy Backend Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::615201069679:role/GitHubActions_PortfolioBackend_Role
+          aws-region: us-east-1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Run Python Unit Tests
+        run: python -m unittest discover
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+        env:
+          TF_VAR_ip_hash_secret: ${{ secrets.IP_HASH_SECRET }}
+
+      - name: Run tfsec Security Scan
+        uses: aquasecurity/tfsec-action@v1.0.0
+        
+
+      - name: Terraform Plan
+        run: terraform plan -no-color
+        env:
+          TF_VAR_ip_hash_secret: ${{ secrets.IP_HASH_SECRET }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -no-color
+        env:
+          TF_VAR_ip_hash_secret: ${{ secrets.IP_HASH_SECRET }}

@@ -11,19 +11,29 @@ provider "aws" {
   region = "ap-south-2"
 }
 
+terraform {
+  backend "s3" {
+    bucket = "aravind-terraform-state-bucket" 
+    key    = "portfolio-backend/terraform.tfstate"
+    region = "ap-south-2"
+  }
+}
+
 data "aws_caller_identity" "current" {}
 
 
 resource "aws_dynamodb_table" "visitor_counter_table" {
   name         = "PortfolioVisitorCounter"
-  billing_mode = "PAY_PER_REQUEST" # Serverless billing, cost-effective for low traffic
+  billing_mode = "PAY_PER_REQUEST" 
   hash_key     = "ID"
 
   attribute {
     name = "ID"
-    type = "S" # S for String
+    type = "S" 
   }
-
+  server_side_encryption {
+    enabled = true
+  }
   tags = {
     Project   = "Cloud Resume Challenge"
     ManagedBy = "Terraform"
@@ -94,8 +104,8 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   
   role    = aws_iam_role.lambda_exec_role.arn
-  handler = "counter.lambda_handler" # The file is "counter.py", the function is "lambda_handler"
-  runtime = "python3.9"
+  handler = "counter.lambda_handler"
+  runtime = "python3.13"
 
   environment {
     variables = {
@@ -120,6 +130,7 @@ resource "aws_api_gateway_method" "post_method" {
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
   resource_id   = aws_api_gateway_resource.visitors_resource.id
   http_method   = "POST"
+  # tfsec:ignore:aws-api-gateway-no-public-access
   authorization = "NONE"
 }
 
