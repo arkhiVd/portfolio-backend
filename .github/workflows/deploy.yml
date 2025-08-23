@@ -41,8 +41,7 @@ jobs:
           TF_VAR_ip_hash_secret: ${{ secrets.IP_HASH_SECRET }}
 
       - name: Run tfsec Security Scan
-        uses: aquasecurity/tfsec-action@v1.0.0
-        
+        uses: aquasecurity/tfsec-action@v1.0.0        
 
       - name: Terraform Plan
         run: terraform plan -no-color
