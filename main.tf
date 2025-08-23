@@ -110,7 +110,7 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
 
   environment {
     variables = {
-      IP_HASH_SECRET = var.IP_HASH_SECRET
+      ip_hash_secret = var.ip_hash_secret 
       table_name     = aws_dynamodb_table.visitor_counter_table.name
     }
   }
