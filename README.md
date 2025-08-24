@@ -1,5 +1,6 @@
 # Portfolio Backend Infrastructure
-
+![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 ## Overview
 
 This repository contains the Infrastructure as Code (IaC) for the serverless backend of my personal portfolio website demo at. This backend powers a secure, unique-visitor counter. The entire infrastructure is defined declaratively using Terraform and is deployed automatically via a CI/CD pipeline.
