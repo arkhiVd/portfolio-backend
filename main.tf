@@ -107,9 +107,17 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   role    = aws_iam_role.lambda_exec_role.arn
   handler = "counter.lambda_handler"
   runtime = "python3.13"
+  
+  layers = [
+    "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python-amd64-ver-1-21-0:1"
+    ]
 
   environment {
     variables = {
+      AWS_LAMBDA_EXEC_WRAPPER = "/opt/otel-instrument"
+
+      OPENTELEMETRY_COLLECTOR_CONFIG_FILE = "/var/task/collector.yaml"
+
       ip_hash_secret = var.ip_hash_secret 
       table_name     = aws_dynamodb_table.visitor_counter_table.name
     }
@@ -223,11 +231,54 @@ resource "aws_lambda_permission" "api_gateway_permission" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.visitor_counter_lambda.function_name
   principal     = "apigateway.amazonaws.com"
-
-  source_arn = "${aws_api_gateway_rest_api.portfolio_api.execution_arn}/*/${aws_api_gateway_method.post_method.http_method}${aws_api_gateway_resource.visitors_resource.path}"
+  source_arn = "${aws_api_gateway_rest_api.portfolio_api.execution_arn}/*/*"
 }
 
-output "api_invoke_url" {
-  description = "The invoke URL for the API Gateway stage"
-  value = "${aws_api_gateway_stage.production_stage.invoke_url}/${aws_api_gateway_resource.visitors_resource.path_part}"
+resource "aws_api_gateway_resource" "metrics_resource" {
+  rest_api_id = aws_api_gateway_rest_api.portfolio_api.id
+  parent_id   = aws_api_gateway_rest_api.portfolio_api.root_resource_id
+  path_part   = "metrics" 
+}
+
+# tfsec:ignore:aws-api-gateway-no-public-access
+resource "aws_api_gateway_method" "metrics_method" {
+  rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
+  resource_id   = aws_api_gateway_resource.metrics_resource.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "metrics_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.portfolio_api.id
+  resource_id             = aws_api_gateway_resource.metrics_resource.id
+  http_method             = aws_api_gateway_method.metrics_method.http_method
+  integration_http_method = "POST" 
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.visitor_counter_lambda.invoke_arn
+}
+
+resource "aws_api_gateway_deployment" "api_deployment" {
+  rest_api_id = aws_api_gateway_rest_api.portfolio_api.id
+
+  triggers = {
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.visitors_resource.id,
+      aws_api_gateway_method.post_method.id,
+      aws_api_gateway_integration.post_integration.id,
+      aws_api_gateway_method.options_method.id,
+      aws_api_gateway_integration.options_integration.id,
+      aws_api_gateway_resource.metrics_resource.id, 
+      aws_api_gateway_method.metrics_method.id,       
+      aws_api_gateway_integration.metrics_integration.id 
+    ]))
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+output "api_base_url" {
+  description = "The base invoke URL for the API Gateway stage"
+  value       = aws_api_gateway_stage.production_stage.invoke_url
 }
