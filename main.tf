@@ -109,8 +109,8 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   runtime = "python3.13"
   
   layers =     [
-    "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python-amd64-ver-1-21-0:1"
-  ]
+    "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python-amd64-ver-1-34-1:1"
+    ]
 
   environment {
     variables = {
