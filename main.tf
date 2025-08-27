@@ -201,23 +201,6 @@ resource "aws_api_gateway_integration_response" "options_integration_response" {
 }
 
 
-resource "aws_api_gateway_deployment" "api_deployment" {
-  rest_api_id = aws_api_gateway_rest_api.portfolio_api.id
-
-  triggers = {
-    redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.visitors_resource.id,
-      aws_api_gateway_method.post_method.id,
-      aws_api_gateway_integration.post_integration.id,
-      aws_api_gateway_method.options_method.id,
-      aws_api_gateway_integration.options_integration.id
-    ]))
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
 # tfsec:ignore:aws-api-gateway-enable-access-logging
 # tfsec:ignore:aws-api-gateway-enable-tracing
 resource "aws_api_gateway_stage" "production_stage" {
