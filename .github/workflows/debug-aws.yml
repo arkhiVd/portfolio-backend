@@ -1,0 +1,27 @@
+name: Debug AWS Connection
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-auth:
+    name: Test AWS Authentication
+    runs-on: ubuntu-latest
+    env:
+      ACTIONS_STEP_DEBUG: true 
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::615201069679:role/GitHub_Terraform_Backend_Deployer_Role
+          aws-region: ap-south-2
+
+      - name: Test AWS CLI Access
+        run: |
+          echo "Attempting to run a basic AWS CLI command..."
+          aws sts get-caller-identity
