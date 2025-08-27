@@ -25,6 +25,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::615201069679:role/GitHub_Terraform_Backend_Deployer_Role
           aws-region: ap-south-2
+          audience: sts.amazonaws.com
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -42,7 +43,7 @@ jobs:
         env:
           TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }} 
 
-          
+
       - name: Run tfsec Security Scan
         uses: aquasecurity/tfsec-action@v1.0.0        
 
