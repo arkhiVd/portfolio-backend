@@ -11,16 +11,6 @@ provider "aws" {
   region = "ap-south-2"
 }
 
-provider "aws" {
-  alias  = "lambda_layer_region"
-  region = "ap-south-2" 
-}
-
-data "aws_lambda_layer_version" "prometheus_layer" {
-  provider   = aws.lambda_layer_region
-  layer_name = "aws-otel-python-amd64-ver-1-21-0"
-}
-
 terraform {
   backend "s3" {
     bucket = "aravind-terraform-state-bucket" 
@@ -118,8 +108,10 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   handler = "counter.lambda_handler"
   runtime = "python3.13"
   
-  layers =     [data.aws_lambda_layer_version.prometheus_layer.arn]
-  
+  layers =     [
+    "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python-amd64-ver-1-21-0:1"
+  ]
+
   environment {
     variables = {
       AWS_LAMBDA_EXEC_WRAPPER = "/opt/otel-instrument"
