@@ -1,4 +1,4 @@
-name: Debug AWS Connection
+name: Manual Debug AWS Connection
 
 on:
   workflow_dispatch:
@@ -8,20 +8,39 @@ permissions:
   contents: read
 
 jobs:
-  test-auth:
-    name: Test AWS Authentication
+  manual-test-auth:
+    name: Manually Test AWS Authentication
     runs-on: ubuntu-latest
-    env:
-      ACTIONS_STEP_DEBUG: true 
-
+    
     steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: 1. Get OIDC Token
+        id: get-token
+        uses: actions/github-script@v7
         with:
-          role-to-assume: arn:aws:iam::615201069679:role/GitHub_Terraform_Backend_Deployer_Role
-          aws-region: ap-south-2
+          script: |
+            let token = await core.getIDToken()
+            core.setOutput('jwt_token', token)
+            core.setSecret(token) # Hide the token from logs
 
-      - name: Test AWS CLI Access
+ 
+      - name: 2. Decode and Inspect Token
         run: |
-          echo "Attempting to run a basic AWS CLI command..."
-          aws sts get-caller-identity
+          echo "Decoding JWT Token..."
+          # Split the JWT into its 3 parts (header, payload, signature)
+          jwt_payload=$(echo "${{ steps.get-token.outputs.jwt_token }}" | cut -d. -f2)
+          # Base64 decode the payload
+          decoded_payload=$(echo "$jwt_payload" | base64 --decode)
+          echo "---- TOKEN PAYLOAD ----"
+          echo "$decoded_payload" | jq .
+          echo "-----------------------"
+
+      - name: 3. Manually Attempt to Assume Role
+        run: |
+          echo "Attempting to assume role with AWS CLI..."
+          aws sts assume-role-with-web-identity \
+            --role-arn "arn:aws:iam::615201069679:role/GitHub_Terraform_Backend_Deployer_Role" \
+            --role-session-name "GitHubActions-ManualDebug-`date +%s`" \
+            --web-identity-token "${{ steps.get-token.outputs.jwt_token }}" \
+            --duration-seconds 900
+        env:
+          AWS_REGION: ap-south-2
