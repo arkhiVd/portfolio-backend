@@ -42,6 +42,7 @@ jobs:
         env:
           TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }} 
 
+          
       - name: Run tfsec Security Scan
         uses: aquasecurity/tfsec-action@v1.0.0        
 
