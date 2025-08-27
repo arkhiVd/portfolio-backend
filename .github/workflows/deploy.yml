@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::615201069679:role/GitHub_Terraform_Backend_Deployer_Role
           aws-region: ap-south-2
