@@ -20,15 +20,12 @@ jobs:
           script: |
             let token = await core.getIDToken()
             core.setOutput('jwt_token', token)
-            core.setSecret(token) # Hide the token from logs
+            core.setSecret(token); // Hide the token from logs
 
- 
       - name: 2. Decode and Inspect Token
         run: |
           echo "Decoding JWT Token..."
-          # Split the JWT into its 3 parts (header, payload, signature)
           jwt_payload=$(echo "${{ steps.get-token.outputs.jwt_token }}" | cut -d. -f2)
-          # Base64 decode the payload
           decoded_payload=$(echo "$jwt_payload" | base64 --decode)
           echo "---- TOKEN PAYLOAD ----"
           echo "$decoded_payload" | jq .
