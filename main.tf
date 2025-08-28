@@ -79,6 +79,11 @@ resource "aws_iam_policy" "lambda_permissions_policy" {
           "logs:PutLogEvents"
         ],
         Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"
+      },
+      {
+        Effect   = "Allow",
+        Action   = "kms:Decrypt",
+        Resource = "arn:aws:kms:ap-south-1:615201069679:key/88060b6d-61e1-41e8-a6f0-e70b73a55f9f"
       }
     ]
   })
