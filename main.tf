@@ -1,14 +1,11 @@
 terraform {
+  required_version = ">= 1.8.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 6.0"
+      version = "~> 5.45"
     }
   }
-}
-
-provider "aws" {
-  region = "ap-south-2"
 }
 
 terraform {
@@ -18,7 +15,13 @@ terraform {
     region = "ap-south-2"
   }
 }
+provider "aws" {
+  region = "ap-south-2"
 
+  assume_role {
+    role_arn = "arn:aws:iam::615201069679:role/GitHub_Terraform_Backend_Deployer_Role"
+  }
+}
 data "aws_caller_identity" "current" {}
 
 # tfsec:ignore:aws-dynamodb-table-customer-key
