@@ -78,7 +78,7 @@ resource "aws_iam_policy" "lambda_permissions_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ],
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"
       }
     ]
   })
@@ -102,7 +102,7 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   role             = aws_iam_role.lambda_exec_role.arn
   handler          = "counter.lambda_handler"
-  runtime          = "python3.12"
+  runtime          = "python3.13"
 
   environment {
     variables = {
