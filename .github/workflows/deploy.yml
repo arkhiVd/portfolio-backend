@@ -15,8 +15,15 @@ jobs:
     runs-on: ubuntu-latest    
     env:
       ACTIONS_STEP_DEBUG: true
+    
 
     steps:
+      - name: Cache Terraform plugins
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}
+
       - name: Checkout Code
         uses: actions/checkout@v4
           

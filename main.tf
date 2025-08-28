@@ -11,13 +11,19 @@ provider "aws" {
   region = "ap-south-1"
 }
 
+provider "aws" {
+  alias  = "backend"
+  region = "ap-south-2"
+}
+
 terraform {
   backend "s3" {
     bucket = "aravind-terraform-state-bucket"
-    key    = "portfolio-backend/terraform.tfstate"
+    key    = "env:/terraform.tfstate"
     region = "ap-south-2"
   }
 }
+
 
 data "aws_caller_identity" "current" {}
 
@@ -103,7 +109,7 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   runtime = "python3.13"
   
   layers = [
-      "arn:aws:lambda:ap-south-1:901920570463:layer:aws-otel-python-amd64-ver-1-32-0:2"
+    "arn:aws:lambda:ap-south-1:615299751070:layer:AWSOpenTelemetryDistroPython:13"
     ]
 
   environment {
