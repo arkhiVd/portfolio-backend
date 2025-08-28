@@ -18,18 +18,9 @@ terraform {
     region = "ap-south-2"
   }
 }
-resource "aws_lambda_layer_version" "private_otel_layer" {
-  layer_name          = "private-otel-python313"
-  compatible_runtimes = ["python3.13"]
-  filename            = "${path.module}/otel-layer.zip"
-  source_code_hash    = filesha256("${path.module}/otel-layer.zip")
-}
-
 
 data "aws_caller_identity" "current" {}
 
-# tfsec:ignore:aws-dynamodb-table-customer-key
-# tfsec:ignore:aws-dynamodb-enable-recovery 
 resource "aws_dynamodb_table" "visitor_counter_table" {
   name         = "PortfolioVisitorCounter"
   billing_mode = "PAY_PER_REQUEST" 
@@ -71,7 +62,6 @@ resource "aws_iam_policy" "lambda_permissions_policy" {
   policy = jsonencode({
     Version   = "2012-10-17",
     Statement = [
-
       {
         Effect   = "Allow",
         Action   = [
@@ -81,7 +71,6 @@ resource "aws_iam_policy" "lambda_permissions_policy" {
         ],
         Resource = aws_dynamodb_table.visitor_counter_table.arn
       },
-
       {
         Effect   = "Allow",
         Action   = [
@@ -106,8 +95,6 @@ data "archive_file" "lambda_zip" {
   output_path = "${path.module}/counter.zip"
 }
 
-
-# tfsec:ignore:aws-lambda-enable-tracing
 resource "aws_lambda_function" "visitor_counter_lambda" {
   function_name = "PortfolioVisitorCounterFunction"
   filename      = data.archive_file.lambda_zip.output_path
@@ -115,19 +102,16 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   
   role    = aws_iam_role.lambda_exec_role.arn
   handler = "counter.lambda_handler"
-  runtime = "python3.13"
-
+  runtime = "python3.12"
   
   layers = [
-    aws_lambda_layer_version.private_otel_layer.arn
+    "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python-amd64-ver-1-34-1:1"
   ]   
 
   environment {
     variables = {
       AWS_LAMBDA_EXEC_WRAPPER = "/opt/otel-instrument"
-
       OPENTELEMETRY_COLLECTOR_CONFIG_FILE = "/var/task/collector.yaml"
-
       ip_hash_secret = var.ip_hash_secret 
       table_name     = aws_dynamodb_table.visitor_counter_table.name
     }
@@ -144,12 +128,11 @@ resource "aws_api_gateway_resource" "visitors_resource" {
   parent_id   = aws_api_gateway_rest_api.portfolio_api.root_resource_id
   path_part   = "visitors"
 }
-# tfsec:ignore:aws-api-gateway-no-public-access
+
 resource "aws_api_gateway_method" "post_method" {
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
   resource_id   = aws_api_gateway_resource.visitors_resource.id
   http_method   = "POST"
-  # tfsec:ignore:aws-api-gateway-no-public-access
   authorization = "NONE"
 }
 
@@ -161,7 +144,7 @@ resource "aws_api_gateway_integration" "post_integration" {
   type                    = "AWS_PROXY" 
   uri                     = aws_lambda_function.visitor_counter_lambda.invoke_arn
 }
-# tfsec:ignore:aws-api-gateway-no-public-access
+
 resource "aws_api_gateway_method" "options_method" {
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
   resource_id   = aws_api_gateway_resource.visitors_resource.id
@@ -210,9 +193,6 @@ resource "aws_api_gateway_integration_response" "options_integration_response" {
   }
 }
 
-
-# tfsec:ignore:aws-api-gateway-enable-access-logging
-# tfsec:ignore:aws-api-gateway-enable-tracing
 resource "aws_api_gateway_stage" "production_stage" {
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
@@ -233,7 +213,6 @@ resource "aws_api_gateway_resource" "metrics_resource" {
   path_part   = "metrics" 
 }
 
-# tfsec:ignore:aws-api-gateway-no-public-access
 resource "aws_api_gateway_method" "metrics_method" {
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
   resource_id   = aws_api_gateway_resource.metrics_resource.id

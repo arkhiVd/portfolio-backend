@@ -19,34 +19,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
-      - name: Download and Repackage OTEL Lambda Layer
-        run: |
-          mkdir -p infrastructure
-          curl -L --fail -o infrastructure/otel-layer-orig.zip \
-          "https://github.com/aws-observability/aws-otel-lambda/releases/download/v2.5.0/aws-otel-python313-amd64-ver-2-5-0.zip"
-
-          echo "Checking file size..."
-          ls -lh infrastructure/otel-layer-orig.zip
-
-          echo "Unzipping original layer..."
-          unzip -q infrastructure/otel-layer-orig.zip -d infrastructure/otel-layer-orig
-
-          echo "Repackaging to ensure python/ is at root..."
-          cd infrastructure/otel-layer-orig
-          TOPDIR=$(ls -d */ | head -n 1)
-          if [ -d "${TOPDIR}python" ]; then
-            cd "$TOPDIR"
-          fi
-          zip -qr ../../otel-layer.zip python
-          cd ../../
-
-          echo "Layer repackaged as infrastructure/otel-layer.zip"
-  
-      - name: Inspect OTEL Layer ZIP structure
-        run: |
-          echo "Listing first 50 files in repackaged otel-layer.zip..."
-          unzip -l infrastructure/otel-layer.zip | head -50
           
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -58,7 +30,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.12'
 
       - name: Run Python Unit Tests
         run: python -m unittest discover
@@ -67,7 +39,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        run: terraform init -upgrade
+        run: terraform init
         env:
           TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }} 
 
