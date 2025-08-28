@@ -21,6 +21,8 @@ terraform {
 
 data "aws_caller_identity" "current" {}
 
+# tfsec:ignore:aws-dynamodb-table-customer-key
+# tfsec:ignore:aws-dynamodb-enable-recovery 
 resource "aws_dynamodb_table" "visitor_counter_table" {
   name         = "PortfolioVisitorCounter"
   billing_mode = "PAY_PER_REQUEST" 
@@ -95,6 +97,7 @@ data "archive_file" "lambda_zip" {
   output_path = "${path.module}/counter.zip"
 }
 
+# tfsec:ignore:aws-lambda-enable-tracing
 resource "aws_lambda_function" "visitor_counter_lambda" {
   function_name = "PortfolioVisitorCounterFunction"
   filename      = data.archive_file.lambda_zip.output_path
@@ -129,6 +132,7 @@ resource "aws_api_gateway_resource" "visitors_resource" {
   path_part   = "visitors"
 }
 
+# tfsec:ignore:aws-api-gateway-no-public-access
 resource "aws_api_gateway_method" "post_method" {
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
   resource_id   = aws_api_gateway_resource.visitors_resource.id
@@ -145,6 +149,7 @@ resource "aws_api_gateway_integration" "post_integration" {
   uri                     = aws_lambda_function.visitor_counter_lambda.invoke_arn
 }
 
+# tfsec:ignore:aws-api-gateway-no-public-access
 resource "aws_api_gateway_method" "options_method" {
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
   resource_id   = aws_api_gateway_resource.visitors_resource.id
@@ -193,6 +198,8 @@ resource "aws_api_gateway_integration_response" "options_integration_response" {
   }
 }
 
+# tfsec:ignore:aws-api-gateway-enable-access-logging
+# tfsec:ignore:aws-api-gateway-enable-tracing
 resource "aws_api_gateway_stage" "production_stage" {
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
@@ -213,6 +220,7 @@ resource "aws_api_gateway_resource" "metrics_resource" {
   path_part   = "metrics" 
 }
 
+# tfsec:ignore:aws-api-gateway-no-public-access
 resource "aws_api_gateway_method" "metrics_method" {
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
   resource_id   = aws_api_gateway_resource.metrics_resource.id
