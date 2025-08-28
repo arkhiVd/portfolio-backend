@@ -6,6 +6,6 @@ variable "ip_hash_secret" {
 variable "aws_region" {
   description = "The AWS region to deploy resources in."
   type        = string
-  default     = "ap-south-1"
+  default     = "ap-south-2"
   
 }

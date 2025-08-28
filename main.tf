@@ -8,12 +8,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "ap-south-1"
-}
-
-provider "aws" {
-  alias  = "backend"
-  region = "ap-south-2"
+  region = var.aws_region
 }
 
 terraform {
@@ -107,11 +102,9 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   role    = aws_iam_role.lambda_exec_role.arn
   handler = "counter.lambda_handler"
   runtime = "python3.13"
-  
   layers = [
-    "arn:aws:lambda:ap-south-1:615299751070:layer:AWSOpenTelemetryDistroPython:13"
+    "arn:aws:lambda:${var.aws_region}:901920570463:layer:aws-otel-python-amd64-ver-1-34-1:1"
     ]
-
   environment {
     variables = {
       AWS_LAMBDA_EXEC_WRAPPER             = "/opt/otel-instrument"
