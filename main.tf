@@ -1,5 +1,4 @@
 terraform {
-  
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -19,6 +18,16 @@ terraform {
     region = "ap-south-2"
   }
 }
+data "http" "otel_layer_zip" {
+  url = "https://aws-otel-lambda-layers-ap-south-2.s3.ap-south-2.amazonaws.com/python/aws-otel-python313-amd64-ver-2-5-0.zip"
+}
+resource "aws_lambda_layer_version" "private_otel_layer" {
+  filename            = data.http.otel_layer_zip.response_body
+  layer_name          = "private-otel-python313"
+  compatible_runtimes = ["python3.13"]
+   source_code_hash = data.http.otel_layer_zip.response_body_sha256
+}
+
 
 data "aws_caller_identity" "current" {}
 
@@ -111,11 +120,10 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   handler = "counter.lambda_handler"
   runtime = "python3.13"
 
-  /*
+  
   layers =     [
-    "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python313-amd64-ver-2-5-0:1"
+    aws_lambda_layer_version.private_otel_layer.arn
     ]
-    */
 
   environment {
     variables = {
@@ -127,10 +135,6 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
       table_name     = aws_dynamodb_table.visitor_counter_table.name
     }
   }
-}
-resource "aws_lambda_function_layer_association" "otel_layer" {
-  function_name = aws_lambda_function.visitor_counter_lambda.function_name
-  layer_arn     = "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python313-amd64-ver-2-5-0:1"
 }
 
 resource "aws_api_gateway_rest_api" "portfolio_api" {
