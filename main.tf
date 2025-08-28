@@ -10,9 +10,6 @@ terraform {
 
 provider "aws" {
   region = "ap-south-2"
-   assume_role {
-    role_arn = "arn:aws:iam::615201069679:role/GitHub_Terraform_Backend_Deployer_Role"
-  }
 }
 
 terraform {
@@ -114,10 +111,11 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   handler = "counter.lambda_handler"
   runtime = "python3.13"
 
-  
+  /*
   layers =     [
     "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python313-amd64-ver-2-5-0:1"
     ]
+    */
 
   environment {
     variables = {
@@ -129,6 +127,10 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
       table_name     = aws_dynamodb_table.visitor_counter_table.name
     }
   }
+}
+resource "aws_lambda_function_layer_association" "otel_layer" {
+  function_name = aws_lambda_function.visitor_counter_lambda.function_name
+  layer_arn     = "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python313-amd64-ver-2-5-0:1"
 }
 
 resource "aws_api_gateway_rest_api" "portfolio_api" {
