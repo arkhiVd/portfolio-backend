@@ -5,19 +5,18 @@ terraform {
       version = "~> 6.0"
     }
   }
+
+  backend "s3" {
+    bucket = "aravind-terraform-state-bucket-ap-south-1"
+    key    = "portfolio-backend/terraform.tfstate"
+    region = "ap-south-1"
+  }
 }
 
 provider "aws" {
   region = var.aws_region
 }
 
-terraform {
-  backend "s3" {
-    bucket = "aravind-terraform-state-bucket-ap-south-1"
-    key    = "portfolio-backend/terraform.tfstate"
-    region = "ap-south-1"                                
-  }
-}
 data "aws_caller_identity" "current" {}
 
 # tfsec:ignore:aws-dynamodb-table-customer-key
@@ -103,7 +102,7 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   role             = aws_iam_role.lambda_exec_role.arn
   handler          = "counter.lambda_handler"
-  runtime          = "python3.13"
+  runtime          = "python3.12"
 
   environment {
     variables = {

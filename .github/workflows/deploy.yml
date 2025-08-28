@@ -27,29 +27,26 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::615201069679:role/GitHubActions_PortfolioBackend_Role
-          aws-region: ap-south-1
+          aws-region: ap-south-1 
 
-      - name: Setup Python
+      - name: Setup Python for Unit Tests
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.12' 
 
       - name: Run Python Unit Tests
         run: python -m unittest discover
-
-      - name: Package Lambda function
-        run: zip counter.zip counter.py
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
         run: terraform init
-        env:
-          TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }}
 
       - name: Run tfsec Security Scan
         uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: . 
 
       - name: Terraform Plan
         run: terraform plan -no-color -input=false
