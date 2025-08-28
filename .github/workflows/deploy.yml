@@ -39,7 +39,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -upgrade
         env:
           TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }} 
 
