@@ -13,9 +13,9 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "aravind-terraform-state-bucket"
-    key    = "env:/terraform.tfstate"
-    region = "ap-south-2"
+    bucket = "aravind-terraform-state-bucket-ap-south-1"
+    key    = "portfolio-backend/terraform.tfstate"
+    region = "ap-south-1"
   }
 }
 
@@ -55,16 +55,20 @@ resource "aws_iam_role" "lambda_exec_role" {
     ]
   })
 }
-
 resource "aws_iam_policy" "lambda_permissions_policy" {
   name        = "portfolio-lambda-permissions"
-  description = "Allows Lambda to write to DynamoDB and CloudWatch Logs"
+  description = "Allows Lambda to write to DynamoDB, CloudWatch Logs, and access ADOT layer"
+
   policy = jsonencode({
     Version   = "2012-10-17",
     Statement = [
       {
         Effect   = "Allow",
-        Action   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"],
+        Action   = [
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem"
+        ],
         Resource = aws_dynamodb_table.visitor_counter_table.arn
       },
       {
@@ -75,7 +79,14 @@ resource "aws_iam_policy" "lambda_permissions_policy" {
           "logs:PutLogEvents"
         ],
         Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"
-
+      },
+      {
+        Effect   = "Allow",
+        Action   = [
+          "lambda:GetLayerVersion",
+          "lambda:ListLayerVersions"
+        ],
+        Resource = "arn:aws:lambda:${var.aws_region}:901920570463:layer:aws-otel-python-amd64-ver-1-32-0:*"
       }
     ]
   })
@@ -103,7 +114,7 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   handler = "counter.lambda_handler"
   runtime = "python3.13"
   layers = [
-    "arn:aws:lambda:${var.aws_region}:901920570463:layer:aws-otel-python-amd64-ver-1-34-1:1"
+    "arn:aws:lambda:ap-south-1:901920570463:layer:aws-otel-python-amd64-ver-1-32-0:2"
     ]
   environment {
     variables = {

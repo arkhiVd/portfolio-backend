@@ -31,7 +31,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::615201069679:role/GitHubActions_PortfolioBackend_Role        
-          aws-region: ap-south-2
+          aws-region: ap-south-1
           audience: sts.amazonaws.com
 
       - name: Setup Python
