@@ -42,6 +42,9 @@ jobs:
       - name: Run Python Unit Tests
         run: python -m unittest discover
 
+      - name: Package Lambda function
+        run: zip counter.zip counter.py collector.yaml
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 

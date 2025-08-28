@@ -97,23 +97,26 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
   policy_arn = aws_iam_policy.lambda_permissions_policy.arn
 }
 
-resource "null_resource" "prepare_lambda_package" {
-  triggers = {
-    counter_py = filebase64sha256("${path.module}/counter.py")
-    collector_yaml = filebase64sha256("${path.module}/collector.yaml")
+
+resource "aws_lambda_function" "visitor_counter_lambda" {
+  function_name = "PortfolioVisitorCounterFunction"
+  filename      = "${path.module}/counter.zip"
+  role          = aws_iam_role.lambda_exec_role.arn
+  handler       = "counter.lambda_handler"
+  runtime       = "python3.13"
+  
+  layers = [
+    "arn:aws:lambda:ap-south-1:615299751070:layer:AWS-OpenTelemetry-Distro-Python:13"
+  ]
+
+  environment {
+    variables = {
+      AWS_LAMBDA_EXEC_WRAPPER             = "/opt/otel-instrument"
+      OPENTELEMETRY_COLLECTOR_CONFIG_FILE = "/var/task/collector.yaml"
+      ip_hash_secret                      = var.ip_hash_secret
+      table_name                          = aws_dynamodb_table.visitor_counter_table.name
+    }
   }
-
-  provisioner "local-exec" {
-    command = "mkdir -p ${path.module}/package; cp ${path.module}/counter.py ${path.module}/collector.yaml ${path.module}/package/"
-  }
-}
-
-data "archive_file" "lambda_zip" {
-  type        = "zip"
-  source_dir  = "${path.module}/package"
-  output_path = "${path.module}/counter.zip"
-
-  depends_on = [null_resource.prepare_lambda_package]
 }
 
 
