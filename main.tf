@@ -107,9 +107,7 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   role    = aws_iam_role.lambda_exec_role.arn
   handler = "counter.lambda_handler"
   runtime = "python3.13"
-   depends_on = [
-    aws_lambda_permission.api_gateway_permission
-  ]
+
   
   layers =     [
     "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python-amd64-ver-1-34-1:1"
@@ -246,7 +244,7 @@ resource "aws_api_gateway_integration" "metrics_integration" {
 resource "aws_api_gateway_deployment" "api_deployment" {
   rest_api_id = aws_api_gateway_rest_api.portfolio_api.id
 
-/*  triggers = {
+  triggers = {
     redeployment = sha1(jsonencode([
       aws_api_gateway_resource.visitors_resource.id,
       aws_api_gateway_method.post_method.id,
@@ -258,34 +256,12 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.metrics_integration.id 
     ]))
   }
-*/
+
   lifecycle {
     create_before_destroy = true
   }
 }
-resource "null_resource" "api_gateway_deploy_trigger" {
-  triggers = {
-    lambda_updated = aws_lambda_function.visitor_counter_lambda.source_code_hash
-    post_integration_updated = aws_api_gateway_integration.post_integration.id
-    metrics_integration_updated = aws_api_gateway_integration.metrics_integration.id
-    options_integration_updated = aws_api_gateway_integration.options_integration.id
-  }
-  provisioner "local-exec" {
-    command = <<EOF
-      aws apigateway create-deployment \
-        --rest-api-id ${aws_api_gateway_rest_api.portfolio_api.id} \
-        --stage-name ${aws_api_gateway_stage.production_stage.stage_name}
-    EOF
-  }
 
-  depends_on = [
-    aws_api_gateway_integration.post_integration,
-    aws_api_gateway_integration.metrics_integration,
-    aws_api_gateway_integration.options_integration,
-    aws_lambda_function.visitor_counter_lambda
-  ]
-}
-  
 output "api_base_url" {
   description = "The base invoke URL for the API Gateway stage"
   value       = aws_api_gateway_stage.production_stage.invoke_url
