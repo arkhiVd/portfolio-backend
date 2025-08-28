@@ -8,14 +8,14 @@ terraform {
 }
 
 provider "aws" {
-  region = "ap-south-2"
+  region = "ap-south-1"
 }
 
 terraform {
   backend "s3" {
-    bucket = "aravind-terraform-state-bucket" 
+    bucket = "aravind-terraform-state-bucket"
     key    = "portfolio-backend/terraform.tfstate"
-    region = "ap-south-2"
+    region = "ap-south-1"
   }
 }
 
@@ -68,12 +68,17 @@ resource "aws_iam_policy" "lambda_permissions_policy" {
       },
       {
         Effect   = "Allow",
-        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
-        Resource = "arn:aws:logs:ap-south-2:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*:*"
+        Action   = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:ap-south-1:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*:*"
       }
     ]
   })
 }
+
 
 resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
   role       = aws_iam_role.lambda_exec_role.name
