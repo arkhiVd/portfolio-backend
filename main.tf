@@ -42,6 +42,18 @@ resource "aws_dynamodb_table" "visitor_counter_table" {
   }
 }
 
+resource "aws_dynamodb_table_item" "initial_counter" {
+  table_name = aws_dynamodb_table.visitor_counter_table.name
+
+  hash_key = "ID"
+
+  item = jsonencode({
+    ID            = { S = "portfolio_counter" }
+    visitor_count = { N = "0" }
+  })
+}
+
+
 resource "aws_iam_role" "lambda_exec_role" {
   name               = "portfolio-lambda-execution-role"
   assume_role_policy = jsonencode({
