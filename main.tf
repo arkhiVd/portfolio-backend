@@ -263,7 +263,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   }
 }
 
-output "api_base_url" {
-  description = "The base invoke URL for the API Gateway stage"
-  value       = aws_api_gateway_stage.production_stage.invoke_url
+output "api_invoke_url" {
+  description = "The invoke URL for the visitor counter endpoint"
+  value       = "${aws_api_gateway_stage.production_stage.invoke_url}/${aws_api_gateway_resource.visitors_resource.path_part}"
 }
