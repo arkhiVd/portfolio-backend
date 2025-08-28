@@ -41,7 +41,13 @@ def lambda_handler(event, context):
             )
         
         final_count_response = table.get_item(Key={'ID': COUNTER_ID})
-        visitor_count = int(final_count_response.get('Item', {}).get('visitor_count', 0))
+        item = final_count_response.get('Item')
+
+        if item and 'visitor_count' in item:
+            visitor_count = int(item['visitor_count'])
+        else:
+            visitor_count = 0
+            table.put_item(Item={'ID': COUNTER_ID, 'visitor_count': visitor_count})
 
         return {
             'statusCode': 200,
