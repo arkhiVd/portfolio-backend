@@ -64,21 +64,13 @@ resource "aws_iam_policy" "lambda_permissions_policy" {
     Statement = [
       {
         Effect   = "Allow",
-        Action   = [
-          "dynamodb:PutItem",
-          "dynamodb:GetItem",
-          "dynamodb:UpdateItem"
-        ],
+        Action   = [ "dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem" ],
         Resource = aws_dynamodb_table.visitor_counter_table.arn
       },
       {
         Effect   = "Allow",
-        Action   = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ],
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"
+        Action   = [ "logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents" ],
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*:*" # <-- CRITICAL FIX (added :*)
       },
       {
         Effect   = "Allow",
