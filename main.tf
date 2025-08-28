@@ -15,10 +15,9 @@ terraform {
   backend "s3" {
     bucket = "aravind-terraform-state-bucket-ap-south-1"
     key    = "portfolio-backend/terraform.tfstate"
-    region = "ap-south-1"
+    region = "ap-south-1"                                
   }
 }
-
 data "aws_caller_identity" "current" {}
 
 # tfsec:ignore:aws-dynamodb-table-customer-key

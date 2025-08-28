@@ -5,6 +5,12 @@ import hmac
 import hashlib
 import base64
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+}
+
 def pseudonymize_ip(ip: str, secret: str) -> str:
     TRUNCATE_BYTES = 12
     mac = hmac.new(secret.encode(), ip.encode(), hashlib.sha256).digest()
@@ -39,17 +45,21 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'headers': {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "POST, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type"
-            },
+            'headers': CORS_HEADERS,
             'body': json.dumps({'count': visitor_count})
         }
 
     except KeyError as e:
         print(f"A KeyError occurred! The missing key is: {e}")
-        return {'statusCode': 500, 'body': json.dumps({'error': 'Internal server configuration error'})}
+        return {
+            'statusCode': 500,
+            'headers': CORS_HEADERS,
+            'body': json.dumps({'error': 'Internal server configuration error'})
+        }
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        return {'statusCode': 500, 'body': json.dumps({'error': 'An internal error occurred'})}
+        return {
+            'statusCode': 500,
+            'headers': CORS_HEADERS,
+            'body': json.dumps({'error': 'An internal error occurred'})
+        }
