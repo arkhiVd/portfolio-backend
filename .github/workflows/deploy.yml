@@ -20,9 +20,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
       
-      - name: Download OTEL Lambda Layer
-        run: curl -L -o otel-layer.zip https://aws-otel-lambda-layers-ap-south-2.s3.ap-south-2.amazonaws.com/python/aws-otel-python313-amd64-ver-2-5-0.zip
-
+      - name: Download and Verify OTEL Lambda Layer
+        run: |
+          curl -L -o otel-layer.zip "https://github.com/aws-observability/aws-otel-lambda/releases/download/v2.5.0/aws-otel-python313-amd64-ver-2-5-0.zip"
+          echo "Verifying downloaded file..."
+          unzip -l otel-layer.zip | head -10
+          
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

@@ -19,12 +19,12 @@ terraform {
   }
 }
 resource "aws_lambda_layer_version" "private_otel_layer" {
-  filename            = "otel-layer.zip"
   layer_name          = "private-otel-python313"
   compatible_runtimes = ["python3.13"]
-  
-  source_code_hash = filesha256("otel-layer.zip")
+  filename            = "${path.module}/otel-layer.zip"
+  source_code_hash    = filesha256("${path.module}/otel-layer.zip")
 }
+
 
 data "aws_caller_identity" "current" {}
 
