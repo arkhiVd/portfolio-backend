@@ -127,7 +127,7 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   handler = "counter.lambda_handler"
   runtime = "python3.13"
   layers = [
-    "arn:aws:lambda:ap-south-1:901920570463:layer:aws-otel-python-amd64-ver-1-32-0:2"
+    "arn:aws:lambda:ap-south-1:615299751070:layer:AWS-OpenTelemetry-Distro-Python:13"
     ]
   environment {
     variables = {
