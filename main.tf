@@ -15,7 +15,7 @@ terraform {
   backend "s3" {
     bucket = "aravind-terraform-state-bucket"
     key    = "portfolio-backend/terraform.tfstate"
-    region = "ap-south-1"
+    region = "ap-south-2"
   }
 }
 
@@ -73,7 +73,8 @@ resource "aws_iam_policy" "lambda_permissions_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ],
-        Resource = "arn:aws:logs:ap-south-1:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"
+
       }
     ]
   })
@@ -102,8 +103,8 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   runtime = "python3.13"
   
   layers = [
-    "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python313-amd64-ver-2-5-0:1"
-  ]   
+      "arn:aws:lambda:ap-south-1:901920570463:layer:aws-otel-python-amd64-ver-1-32-0:2"
+    ]
 
   environment {
     variables = {
