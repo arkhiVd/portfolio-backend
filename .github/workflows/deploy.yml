@@ -23,7 +23,11 @@ jobs:
       - name: Download and Repackage OTEL Lambda Layer
         run: |
           mkdir -p infrastructure
-          curl -L -o infrastructure/otel-layer-orig.zip "https://github.com/aws-observability/aws-otel-lambda/releases/download/v2.5.0/aws-otel-python-amd64-ver-2-5-0.zip"
+          curl -L --fail -o infrastructure/otel-layer-orig.zip \
+            "https://github.com/aws-observability/aws-otel-lambda/releases/download/v2.5.0/aws-otel-python-amd64-ver-2-5-0.zip"
+
+          echo "Checking file size..."
+          ls -lh infrastructure/otel-layer-orig.zip
 
           echo "Unzipping original layer..."
           unzip -q infrastructure/otel-layer-orig.zip -d infrastructure/otel-layer-orig
@@ -38,8 +42,7 @@ jobs:
           cd ../../
 
           echo "Layer repackaged as infrastructure/otel-layer.zip"
-
-      
+  
       - name: Inspect OTEL Layer ZIP structure
         run: |
           echo "Listing first 50 files in repackaged otel-layer.zip..."
