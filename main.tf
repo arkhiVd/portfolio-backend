@@ -98,6 +98,13 @@ data "archive_file" "lambda_zip" {
   source_file = "${path.module}/counter.py"
   output_path = "${path.module}/counter.zip"
 }
+
+
+data "aws_lambda_layer_version" "aws_otel_python" {
+  layer_name = "aws-otel-python-amd64-ver-1-34-1"
+  compatible_runtime = "python3.12" 
+}
+
 # tfsec:ignore:aws-lambda-enable-tracing
 resource "aws_lambda_function" "visitor_counter_lambda" {
   function_name = "PortfolioVisitorCounterFunction"
@@ -109,16 +116,14 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   runtime = "python3.12"
 
   
-  layers =     [
-    "arn:aws:lambda:ap-south-2:901920570463:layer:aws-otel-python-amd64-ver-1-34-1:1"
-    ]
+  layers = [
+    data.aws_lambda_layer_version.aws_otel_python.arn
+  ]
 
   environment {
     variables = {
       AWS_LAMBDA_EXEC_WRAPPER = "/opt/otel-instrument"
-
       OPENTELEMETRY_COLLECTOR_CONFIG_FILE = "/var/task/collector.yaml"
-
       ip_hash_secret = var.ip_hash_secret 
       table_name     = aws_dynamodb_table.visitor_counter_table.name
     }
