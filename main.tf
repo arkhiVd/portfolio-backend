@@ -83,7 +83,6 @@ resource "aws_iam_policy" "lambda_permissions_policy" {
       {
         Effect   = "Allow",
         Action   = [
-          "lambda:GetLayerVersion",
           "lambda:ListLayerVersions"
         ],
         Resource = "arn:aws:lambda:${var.aws_region}:901920570463:layer:aws-otel-python-amd64-ver-1-32-0:*"
