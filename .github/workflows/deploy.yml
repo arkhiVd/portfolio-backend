@@ -30,7 +30,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::615201069679:role/GitHub_Terraform_Backend_Deployer_Role
+          role-to-assume: arn:aws:iam::615201069679:role/GitHubActions_PortfolioBackend_Rol          
           aws-region: ap-south-2
           audience: sts.amazonaws.com
 
