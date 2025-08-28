@@ -20,11 +20,29 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
       
-      - name: Download and Verify OTEL Lambda Layer
+      - name: Download and Repackage OTEL Lambda Layer
         run: |
-          curl -L -o otel-layer.zip "https://github.com/aws-observability/aws-otel-lambda/releases/download/v2.5.0/aws-otel-python313-amd64-ver-2-5-0.zip"
-          echo "Verifying downloaded file..."
-          unzip -l otel-layer.zip | head -10
+          mkdir -p infrastructure
+          curl -L -o infrastructure/otel-layer-orig.zip "https://github.com/aws-observability/aws-otel-lambda/releases/download/v2.5.0/aws-otel-python313-amd64-ver-2-5-0.zip"
+          
+          echo "Unzipping original layer..."
+          unzip -q infrastructure/otel-layer-orig.zip -d infrastructure/otel-layer-orig
+          
+          echo "Repackaging to ensure python/ is at root..."
+          cd infrastructure/otel-layer-orig
+          TOPDIR=$(ls -d */ | head -n 1)
+          if [ -d "${TOPDIR}python" ]; then
+            cd "$TOPDIR"
+          fi
+          zip -qr ../../otel-layer.zip python
+          cd ../../
+          
+          echo "Layer repackaged as infrastructure/otel-layer.zip"
+      
+      - name: Inspect OTEL Layer ZIP structure
+        run: |
+          echo "Listing first 50 files in repackaged otel-layer.zip..."
+          unzip -l infrastructure/otel-layer.zip | head -50
           
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -49,7 +67,6 @@ jobs:
         env:
           TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }} 
 
-
       - name: Run tfsec Security Scan
         uses: aquasecurity/tfsec-action@v1.0.0        
 
@@ -57,12 +74,6 @@ jobs:
         run: terraform plan -no-color -input=false
         env:
           TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }} 
-        
-      - name: Inspect OTEL Layer ZIP structure
-        run: |
-            echo "Listing first 50 files in otel-layer.zip..."
-            unzip -l infrastructure/otel-layer.zip | head -50
-
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -no-color -input=false
