@@ -97,11 +97,25 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
   policy_arn = aws_iam_policy.lambda_permissions_policy.arn
 }
 
+resource "null_resource" "prepare_lambda_package" {
+  triggers = {
+    counter_py = filebase64sha256("${path.module}/counter.py")
+    collector_yaml = filebase64sha256("${path.module}/collector.yaml")
+  }
+
+  provisioner "local-exec" {
+    command = "mkdir -p ${path.module}/package; cp ${path.module}/counter.py ${path.module}/collector.yaml ${path.module}/package/"
+  }
+}
+
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_file = "${path.module}/counter.py"
+  source_dir  = "${path.module}/package"
   output_path = "${path.module}/counter.zip"
+
+  depends_on = [null_resource.prepare_lambda_package]
 }
+
 
 # tfsec:ignore:aws-lambda-enable-tracing
 resource "aws_lambda_function" "visitor_counter_lambda" {

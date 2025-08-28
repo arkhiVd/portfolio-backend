@@ -1,0 +1,15 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+exporters:
+  prometheus:
+    endpoint: ":8888"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      exporters: [prometheus]
