@@ -106,7 +106,7 @@ resource "aws_lambda_function" "visitor_counter_lambda" {
   
   role    = aws_iam_role.lambda_exec_role.arn
   handler = "counter.lambda_handler"
-  runtime = "python3.13"
+  runtime = "python3.12"
 
   
   layers =     [
