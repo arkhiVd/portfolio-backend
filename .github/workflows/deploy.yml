@@ -12,11 +12,7 @@ permissions:
 jobs:
   deploy:
     name: Deploy to AWS
-    runs-on: ubuntu-latest    
-    env:
-      ACTIONS_STEP_DEBUG: true
-    
-
+    runs-on: ubuntu-latest
     steps:
       - name: Cache Terraform plugins
         uses: actions/cache@v4
@@ -26,13 +22,12 @@ jobs:
 
       - name: Checkout Code
         uses: actions/checkout@v4
-          
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::615201069679:role/GitHubActions_PortfolioBackend_Role        
+          role-to-assume: arn:aws:iam::615201069679:role/GitHubActions_PortfolioBackend_Role
           aws-region: ap-south-1
-          audience: sts.amazonaws.com
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -43,7 +38,7 @@ jobs:
         run: python -m unittest discover
 
       - name: Package Lambda function
-        run: zip counter.zip counter.py collector.yaml
+        run: zip counter.zip counter.py
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -51,15 +46,15 @@ jobs:
       - name: Terraform Init
         run: terraform init
         env:
-          TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }} 
+          TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }}
 
       - name: Run tfsec Security Scan
-        uses: aquasecurity/tfsec-action@v1.0.0        
+        uses: aquasecurity/tfsec-action@v1.0.0
 
       - name: Terraform Plan
         run: terraform plan -no-color -input=false
         env:
-          TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }} 
+          TF_VAR_ip_hash_secret: ${{ secrets.ip_hash_secret }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -no-color -input=false

@@ -19,25 +19,24 @@ terraform {
   }
 }
 
-
 data "aws_caller_identity" "current" {}
 
-# tfsec:ignore:aws-dynamodb-table-customer-key
-# tfsec:ignore:aws-dynamodb-enable-recovery 
 resource "aws_dynamodb_table" "visitor_counter_table" {
   name         = "PortfolioVisitorCounter"
-  billing_mode = "PAY_PER_REQUEST" 
+  billing_mode = "PAY_PER_REQUEST"
   hash_key     = "ID"
 
   attribute {
     name = "ID"
-    type = "S" 
+    type = "S"
   }
+
   server_side_encryption {
     enabled = true
   }
+
   tags = {
-    Project   = "Cloud Resume Challenge"
+    Project   = "visitor-count"
     ManagedBy = "Terraform"
   }
 }
@@ -55,10 +54,10 @@ resource "aws_iam_role" "lambda_exec_role" {
     ]
   })
 }
+
 resource "aws_iam_policy" "lambda_permissions_policy" {
   name        = "portfolio-lambda-permissions"
-  description = "Allows Lambda to write to DynamoDB, CloudWatch Logs, and access ADOT layer"
-
+  description = "Allows Lambda to write to DynamoDB and CloudWatch Logs"
   policy = jsonencode({
     Version   = "2012-10-17",
     Statement = [
@@ -78,43 +77,35 @@ resource "aws_iam_policy" "lambda_permissions_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ],
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"
-      },
-      {
-        Effect   = "Allow",
-        Action   = [
-          "lambda:ListLayerVersions"
-        ],
-        Resource = "arn:aws:lambda:${var.aws_region}:901920570463:layer:aws-otel-python-amd64-ver-1-32-0:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*:*"
       }
     ]
   })
 }
-
 
 resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
   role       = aws_iam_role.lambda_exec_role.name
   policy_arn = aws_iam_policy.lambda_permissions_policy.arn
 }
 
-# tfsec:ignore:aws-lambda-enable-tracing
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/counter.py"
+  output_path = "${path.module}/counter.zip"
+}
+
 resource "aws_lambda_function" "visitor_counter_lambda" {
-  function_name = "PortfolioVisitorCounterFunction"
-  filename      = "${path.module}/counter.zip"
-  role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "counter.lambda_handler"
-  runtime       = "python3.13"
-  
-  layers = [
-    "arn:aws:lambda:ap-south-1:615299751070:layer:AWS-OpenTelemetry-Distro-Python:13"
-  ]
+  function_name    = "PortfolioVisitorCounterFunction"
+  filename         = data.archive_file.lambda_zip.output_path
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+  role             = aws_iam_role.lambda_exec_role.arn
+  handler          = "counter.lambda_handler"
+  runtime          = "python3.13"
 
   environment {
     variables = {
-      AWS_LAMBDA_EXEC_WRAPPER             = "/opt/otel-instrument"
-      OPENTELEMETRY_COLLECTOR_CONFIG_FILE = "/var/task/collector.yaml"
-      ip_hash_secret                      = var.ip_hash_secret
-      table_name                          = aws_dynamodb_table.visitor_counter_table.name
+      ip_hash_secret = var.ip_hash_secret
+      table_name     = aws_dynamodb_table.visitor_counter_table.name
     }
   }
 }
@@ -130,7 +121,6 @@ resource "aws_api_gateway_resource" "visitors_resource" {
   path_part   = "visitors"
 }
 
-# tfsec:ignore:aws-api-gateway-no-public-access
 resource "aws_api_gateway_method" "post_method" {
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
   resource_id   = aws_api_gateway_resource.visitors_resource.id
@@ -143,11 +133,10 @@ resource "aws_api_gateway_integration" "post_integration" {
   resource_id             = aws_api_gateway_resource.visitors_resource.id
   http_method             = aws_api_gateway_method.post_method.http_method
   integration_http_method = "POST"
-  type                    = "AWS_PROXY" 
+  type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.visitor_counter_lambda.invoke_arn
 }
 
-# tfsec:ignore:aws-api-gateway-no-public-access
 resource "aws_api_gateway_method" "options_method" {
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
   resource_id   = aws_api_gateway_resource.visitors_resource.id
@@ -159,7 +148,7 @@ resource "aws_api_gateway_integration" "options_integration" {
   rest_api_id = aws_api_gateway_rest_api.portfolio_api.id
   resource_id = aws_api_gateway_resource.visitors_resource.id
   http_method = aws_api_gateway_method.options_method.http_method
-  type        = "MOCK" 
+  type        = "MOCK"
 
   request_templates = {
     "application/json" = "{\"statusCode\": 200}"
@@ -175,7 +164,7 @@ resource "aws_api_gateway_method_response" "options_200" {
   response_models = {
     "application/json" = "Empty"
   }
-  
+
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = true
     "method.response.header.Access-Control-Allow-Methods" = true
@@ -196,8 +185,24 @@ resource "aws_api_gateway_integration_response" "options_integration_response" {
   }
 }
 
-# tfsec:ignore:aws-api-gateway-enable-access-logging
-# tfsec:ignore:aws-api-gateway-enable-tracing
+resource "aws_api_gateway_deployment" "api_deployment" {
+  rest_api_id = aws_api_gateway_rest_api.portfolio_api.id
+
+  triggers = {
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.visitors_resource.id,
+      aws_api_gateway_method.post_method.id,
+      aws_api_gateway_integration.post_integration.id,
+      aws_api_gateway_method.options_method.id,
+      aws_api_gateway_integration.options_integration.id
+    ]))
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 resource "aws_api_gateway_stage" "production_stage" {
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
@@ -209,51 +214,7 @@ resource "aws_lambda_permission" "api_gateway_permission" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.visitor_counter_lambda.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn = "${aws_api_gateway_rest_api.portfolio_api.execution_arn}/*/*"
-}
-
-resource "aws_api_gateway_resource" "metrics_resource" {
-  rest_api_id = aws_api_gateway_rest_api.portfolio_api.id
-  parent_id   = aws_api_gateway_rest_api.portfolio_api.root_resource_id
-  path_part   = "metrics" 
-}
-
-# tfsec:ignore:aws-api-gateway-no-public-access
-resource "aws_api_gateway_method" "metrics_method" {
-  rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
-  resource_id   = aws_api_gateway_resource.metrics_resource.id
-  http_method   = "GET"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "metrics_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.portfolio_api.id
-  resource_id             = aws_api_gateway_resource.metrics_resource.id
-  http_method             = aws_api_gateway_method.metrics_method.http_method
-  integration_http_method = "POST" 
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.visitor_counter_lambda.invoke_arn
-}
-
-resource "aws_api_gateway_deployment" "api_deployment" {
-  rest_api_id = aws_api_gateway_rest_api.portfolio_api.id
-
-  triggers = {
-    redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.visitors_resource.id,
-      aws_api_gateway_method.post_method.id,
-      aws_api_gateway_integration.post_integration.id,
-      aws_api_gateway_method.options_method.id,
-      aws_api_gateway_integration.options_integration.id,
-      aws_api_gateway_resource.metrics_resource.id, 
-      aws_api_gateway_method.metrics_method.id,       
-      aws_api_gateway_integration.metrics_integration.id 
-    ]))
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
+  source_arn    = "${aws_api_gateway_rest_api.portfolio_api.execution_arn}/*/${aws_api_gateway_method.post_method.http_method}${aws_api_gateway_resource.visitors_resource.path}"
 }
 
 output "api_invoke_url" {
