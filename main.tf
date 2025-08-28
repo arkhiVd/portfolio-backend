@@ -1,11 +1,5 @@
 terraform {
   
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.45.0"
-    }
-  }
 }
 
 provider "aws" {
@@ -17,6 +11,7 @@ terraform {
     bucket = "aravind-terraform-state-bucket" 
     key    = "portfolio-backend/terraform.tfstate"
     region = "ap-south-2"
+    role_arn = "arn:aws:iam::615201069679:role/GitHub_Terraform_Backend_Deployer_Role"
   }
 }
 
