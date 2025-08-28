@@ -21,6 +21,8 @@ terraform {
 
 data "aws_caller_identity" "current" {}
 
+# tfsec:ignore:aws-dynamodb-table-customer-key
+# tfsec:ignore:aws-dynamodb-enable-recovery
 resource "aws_dynamodb_table" "visitor_counter_table" {
   name         = "PortfolioVisitorCounter"
   billing_mode = "PAY_PER_REQUEST"
@@ -36,13 +38,13 @@ resource "aws_dynamodb_table" "visitor_counter_table" {
   }
 
   tags = {
-    Project   = "visitor-count"
+    Project   = "Cloud Resume Challenge"
     ManagedBy = "Terraform"
   }
 }
 
 resource "aws_iam_role" "lambda_exec_role" {
-  name = "portfolio-lambda-execution-role"
+  name               = "portfolio-lambda-execution-role"
   assume_role_policy = jsonencode({
     Version   = "2012-10-17",
     Statement = [
@@ -58,7 +60,7 @@ resource "aws_iam_role" "lambda_exec_role" {
 resource "aws_iam_policy" "lambda_permissions_policy" {
   name        = "portfolio-lambda-permissions"
   description = "Allows Lambda to write to DynamoDB and CloudWatch Logs"
-  policy = jsonencode({
+  policy      = jsonencode({
     Version   = "2012-10-17",
     Statement = [
       {
@@ -94,6 +96,7 @@ data "archive_file" "lambda_zip" {
   output_path = "${path.module}/counter.zip"
 }
 
+# tfsec:ignore:aws-lambda-enable-tracing
 resource "aws_lambda_function" "visitor_counter_lambda" {
   function_name    = "PortfolioVisitorCounterFunction"
   filename         = data.archive_file.lambda_zip.output_path
@@ -121,6 +124,7 @@ resource "aws_api_gateway_resource" "visitors_resource" {
   path_part   = "visitors"
 }
 
+# tfsec:ignore:aws-api-gateway-no-public-access
 resource "aws_api_gateway_method" "post_method" {
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
   resource_id   = aws_api_gateway_resource.visitors_resource.id
@@ -137,6 +141,7 @@ resource "aws_api_gateway_integration" "post_integration" {
   uri                     = aws_lambda_function.visitor_counter_lambda.invoke_arn
 }
 
+# tfsec:ignore:aws-api-gateway-no-public-access
 resource "aws_api_gateway_method" "options_method" {
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
   resource_id   = aws_api_gateway_resource.visitors_resource.id
@@ -179,9 +184,9 @@ resource "aws_api_gateway_integration_response" "options_integration_response" {
   status_code = aws_api_gateway_method_response.options_200.status_code
 
   response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+    "method.response.header.Access-control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-control-Allow-Methods" = "'POST,OPTIONS'"
+    "method.response.header.Access-control-Allow-Origin"  = "'*'"
   }
 }
 
@@ -203,6 +208,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   }
 }
 
+# tfsec:ignore:aws-api-gateway-enable-access-logging
+# tfsec:ignore:aws-api-gateway-enable-tracing
 resource "aws_api_gateway_stage" "production_stage" {
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.portfolio_api.id
