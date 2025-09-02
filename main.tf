@@ -197,15 +197,12 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.options_method.id,
       aws_api_gateway_integration.options_integration.id
     ]))
-    lambda_update = sha1(aws_lambda_function.visitor_counter_lambda.last_modified)
   }
-  
 
   lifecycle {
     create_before_destroy = true
   }
 }
-
 
 # tfsec:ignore:aws-api-gateway-enable-access-logging
 # tfsec:ignore:aws-api-gateway-enable-tracing

@@ -4,18 +4,18 @@ import os
 import hmac
 import hashlib
 import base64
-from decimal import Decimal 
-class DecimalEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Decimal):
-            return int(obj)
-        return super(DecimalEncoder, self).default(obj)
+from decimal import Decimal
     
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type"
 }
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, Decimal):
+            return int(o)
+        return super(DecimalEncoder, self).default(o)
 
 def pseudonymize_ip(ip: str, secret: str) -> str:
     TRUNCATE_BYTES = 12
@@ -58,7 +58,7 @@ def lambda_handler(event, context):
         return {
             'statusCode': 200,
             'headers': CORS_HEADERS,
-            'body': json.dumps({'count': visitor_count})
+            'body': json.dumps({'count': visitor_count},cls=DecimalEncoder) 
         }
 
     except KeyError as e:
