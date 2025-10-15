@@ -26,7 +26,7 @@ The backend is built on a serverless, event-driven architecture using core AWS s
 *   **Cloud Provider:** AWS (Amazon Web Services)
 *   **Infrastructure as Code:** Terraform
 *   **Database:** Amazon DynamoDB (NoSQL)
-*   **Compute:** AWS Lambda (Python 3.9)
+*   **Compute:** AWS Lambda (Python 3.13)
 *   **API:** Amazon API Gateway (REST API)
 *   **Security:** AWS IAM (Identity and Access Management)
 
